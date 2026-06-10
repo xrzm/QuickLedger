@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">极速记账</string>
+    <string name="widget_description">极速记账小组件，点击分类即可记账</string>
+</resources>

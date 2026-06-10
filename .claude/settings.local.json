@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Og/AppData/Local/Android/Sdk/**)",
+      "Bash([ -d \"$HOME/Android/Sdk\" ])",
+      "Read(//c/Users/Og/Android/**)",
+      "Read(//c/Program Files/Android/**)",
+      "Read(//c/Program Files/**)",
+      "Bash(C:/Program Files/Android/Android Studio/jbr/bin/java *)",
+      "Bash(echo sdk.dir=C\\\\:\\\\\\\\Users\\\\\\\\Og\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Android\\\\\\\\Sdk *)",
+      "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
+      "Bash(export ANDROID_HOME=\"C:/Users/Og/AppData/Local/Android/Sdk\")",
+      "Bash(export GRADLE_USER_HOME=\"$HOME/.gradle\")",
+      "Bash(\"C:/Users/Og/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/bin/gradle\" -p \"C:/Users/Og/Desktop/quick_record\" compileDebugKotlin)",
+      "Bash(\"C:/Users/Og/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/bin/gradle\" -p \"C:/Users/Og/Desktop/quick_record\" compileDebugKotlin --stacktrace)",
+      "Bash(\"C:/Users/Og/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/bin/gradle\" -p \"C:/Users/Og/Desktop/quick_record\" assembleDebug)",
+      "Bash(\"C:/Users/Og/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/bin/gradle\" -p \"C:/Users/Og/Desktop/quick_record\" testDebugUnitTest)",
+      "Bash(\"C:/Users/Og/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/bin/gradle\" -p \"C:/Users/Og/Desktop/quick_record\" testDebugUnitTest assembleDebug)",
+      "Bash(\"C:/Users/Og/.gradle/wrapper/dists/gradle-8.5-bin/5t9huq95ubn472n8rpzujfbqh/gradle-8.5/bin/gradle\" -p \"C:/Users/Og/Desktop/quick_record\" compileDebugKotlin assembleDebug)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "Bash(git push *)"
+    ]
+  }
+}

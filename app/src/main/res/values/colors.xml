@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#FF1B4D6B</color>
+    <color name="primary_light">#FF2E6F95</color>
+    <color name="primary_dark">#FF0D334A</color>
+    <color name="secondary">#FFE8A87C</color>
+    <color name="income">#FF2ECC71</color>
+    <color name="expense">#FFE74C3C</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="background_light">#FFF8F9FA</color>
+</resources>
