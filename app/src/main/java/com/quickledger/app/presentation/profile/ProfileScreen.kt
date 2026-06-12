@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quickledger.app.domain.model.Category
@@ -63,40 +64,6 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
                                     label = { Text("$day") }
                                 )
                             }
-                        }
-                    }
-                }
-            }
-
-            // Theme
-            item {
-                Text(
-                    text = "深色模式",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-            item {
-                Card(shape = RoundedCornerShape(16.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ThemeMode.entries.forEach { mode ->
-                            FilterChip(
-                                selected = uiState.themeMode == mode,
-                                onClick = { viewModel.setThemeMode(mode) },
-                                label = {
-                                    Text(
-                                        when (mode) {
-                                            ThemeMode.LIGHT -> "浅色"
-                                            ThemeMode.DARK -> "深色"
-                                            ThemeMode.SYSTEM -> "跟随系统"
-                                        }
-                                    )
-                                }
-                            )
                         }
                     }
                 }
@@ -154,31 +121,41 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
                 )
             }
 
-            // Export
+            // Export / Import
             item {
-                Text(
-                    text = "数据导出",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                Text("数据管理", style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 16.dp))
             }
+            // Cycle picker for export
             item {
-                Button(
-                    onClick = viewModel::exportCurrentCycle,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = !uiState.isExporting
-                ) {
-                    if (uiState.isExporting) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("导出中...")
-                    } else {
-                        Icon(Icons.Filled.Share, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("导出当前周期账单 (CSV)")
+                Card(shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = viewModel::previousExportCycle, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Filled.ChevronLeft, "上", modifier = Modifier.size(20.dp))
+                            }
+                            Text(uiState.exportCycleLabel.ifEmpty { "选择周期" },
+                                style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                                modifier = Modifier.weight(1f))
+                            IconButton(onClick = viewModel::nextExportCycle, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Filled.ChevronRight, "下", modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                            Button(onClick = viewModel::exportSelectedPeriod, modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp), enabled = !uiState.isExporting) {
+                                Text("导出", style = MaterialTheme.typography.labelMedium)
+                            }
+                            OutlinedButton(onClick = viewModel::exportAll, modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp), enabled = !uiState.isExporting) {
+                                Text("全部", style = MaterialTheme.typography.labelMedium)
+                            }
+                            OutlinedButton(onClick = viewModel::importFromClipboard, modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)) {
+                                Text("导入", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
                     }
                 }
             }
@@ -197,7 +174,7 @@ fun ProfileScreen(viewModel: ProfileViewModel) {
                         Text(text = "极速记账 QuickLedger", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "版本 2.0.0",
+                            text = "版本 2.3.0",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

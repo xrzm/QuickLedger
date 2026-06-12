@@ -73,6 +73,24 @@ fun BillsScreen(viewModel: BillsViewModel) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Cycle header with navigation
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = viewModel::previousCycle) {
+                Icon(Icons.Filled.ChevronLeft, contentDescription = "上一周期")
+            }
+            Text(uiState.cycleLabel, style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            IconButton(onClick = viewModel::nextCycle) {
+                Icon(Icons.Filled.ChevronRight, contentDescription = "下一周期")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
         // Filter chips
         Row(
             modifier = Modifier

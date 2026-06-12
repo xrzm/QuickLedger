@@ -20,6 +20,7 @@ data class HomeUiState(
     val totalExpense: Double = 0.0,
     val balance: Double = 0.0,
     val recentTransactions: List<Transaction> = emptyList(),
+    val cycleExpenseTotals: List<Pair<Long, Double>> = emptyList(),
     val expenseCategories: List<Category> = emptyList(),
     val incomeCategories: List<Category> = emptyList(),
     val isLoading: Boolean = true,
@@ -93,6 +94,12 @@ class HomeViewModel @Inject constructor(
             val income = transactionRepository.getTotalByTypeAndDateRange(TransactionType.INCOME, currentCycleStart, currentCycleEnd)
             val expense = transactionRepository.getTotalByTypeAndDateRange(TransactionType.EXPENSE, currentCycleStart, currentCycleEnd)
             _uiState.update { it.copy(totalIncome = income, totalExpense = expense, balance = income - expense) }
+
+            // Load per-category expense totals for pie chart (full cycle, not just recent)
+            val expenseTotals = transactionRepository.getCategoryTotalsByDateRange(
+                TransactionType.EXPENSE, currentCycleStart, currentCycleEnd
+            )
+            _uiState.update { it.copy(cycleExpenseTotals = expenseTotals) }
 
             val cats = categoryRepository.getAllCategories().first()
             transactionRepository.getTransactionsByDateRange(currentCycleStart, currentCycleEnd).collect { transactions ->

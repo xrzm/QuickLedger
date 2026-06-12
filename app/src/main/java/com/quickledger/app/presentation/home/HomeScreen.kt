@@ -62,13 +62,11 @@ fun HomeScreen(viewModel: HomeViewModel) {
                 )
             }
 
-            // Expense pie chart
-            val expenseData = uiState.expenseCategories.map { cat ->
-                val total = uiState.recentTransactions
-                    .filter { it.categoryId == cat.id && it.type == TransactionType.EXPENSE }
-                    .sumOf { it.amount }
-                Triple(cat.name, cat.icon, total)
-            }.filter { it.third > 0 }.sortedByDescending { it.third }
+            // Expense pie chart (full cycle totals)
+            val expenseData = uiState.cycleExpenseTotals.mapNotNull { (catId, amount) ->
+                val cat = uiState.expenseCategories.find { it.id == catId }
+                if (cat != null && amount > 0) Triple(cat.name, cat.icon, amount) else null
+            }.sortedByDescending { it.third }
             if (expenseData.isNotEmpty()) {
                 item {
                     Text("支出占比", style = MaterialTheme.typography.titleMedium)

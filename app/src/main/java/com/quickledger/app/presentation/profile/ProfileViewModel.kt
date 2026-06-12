@@ -20,14 +20,16 @@ import javax.inject.Inject
 
 data class ProfileUiState(
     val cycleStartDay: Int = 9,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val expenseCategories: List<Category> = emptyList(),
     val incomeCategories: List<Category> = emptyList(),
     val editingCategory: Category? = null,
     val showCategoryDialog: Boolean = false,
     val isNewCategory: Boolean = true,
     val isIncomeCategory: Boolean = false,
-    val isExporting: Boolean = false
+    val isExporting: Boolean = false,
+    val exportCycleLabel: String = "",
+    val exportCycleStart: Long = 0L,
+    val exportCycleEnd: Long = 0L
 )
 
 @HiltViewModel
@@ -43,13 +45,25 @@ class ProfileViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
-    init { loadData() }
+    init {
+        loadData()
+        viewModelScope.launch {
+            val day = appSettingRepository.getSettingsOnce()?.cycleStartDay ?: 9
+            cycleDay = day
+            val cycle = calculateCycleUseCase.getCurrentCycle(day)
+            _uiState.update { it.copy(exportCycleLabel = cycle.label, exportCycleStart = cycle.startTime, exportCycleEnd = cycle.endTime) }
+        }
+    }
 
     private fun loadData() {
         viewModelScope.launch {
             categoryRepository.initializeDefaultCategoriesIfNeeded()
             appSettingRepository.getSettings().collect { settings ->
-                _uiState.update { it.copy(cycleStartDay = settings?.cycleStartDay ?: 9, themeMode = settings?.themeMode ?: ThemeMode.SYSTEM) }
+                val day = settings?.cycleStartDay ?: 9
+                cycleDay = day
+                val cycle = calculateCycleUseCase.getCurrentCycle(day)
+                _uiState.update { it.copy(cycleStartDay = day,
+                    exportCycleLabel = cycle.label, exportCycleStart = cycle.startTime, exportCycleEnd = cycle.endTime) }
             }
             categoryRepository.getVisibleCategoriesByType(false).collect { cats -> _uiState.update { it.copy(expenseCategories = cats) } }
             categoryRepository.getVisibleCategoriesByType(true).collect { cats -> _uiState.update { it.copy(incomeCategories = cats) } }
@@ -62,14 +76,6 @@ class ProfileViewModel @Inject constructor(
             val current = appSettingRepository.getSettingsOnce()
             appSettingRepository.updateSettings((current ?: AppSetting()).copy(cycleStartDay = clamped))
             _uiState.update { it.copy(cycleStartDay = clamped) }
-        }
-    }
-
-    fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch {
-            val current = appSettingRepository.getSettingsOnce()
-            appSettingRepository.updateSettings((current ?: AppSetting()).copy(themeMode = mode))
-            _uiState.update { it.copy(themeMode = mode) }
         }
     }
 
@@ -92,30 +98,99 @@ class ProfileViewModel @Inject constructor(
     fun deleteCategory(category: Category) { viewModelScope.launch { manageCategoryUseCase.deleteCategory(category) } }
     fun updateCategorySort(categories: List<Category>) { viewModelScope.launch { manageCategoryUseCase.updateSortOrder(categories) } }
 
-    fun exportCurrentCycle() {
+    private var cycleDay = 9
+
+    fun previousExportCycle() {
+        val s = _uiState.value
+        val prev = calculateCycleUseCase.getPreviousCycle(cycleDay, s.exportCycleStart)
+        _uiState.update { it.copy(exportCycleLabel = prev.label, exportCycleStart = prev.startTime, exportCycleEnd = prev.endTime) }
+    }
+
+    fun nextExportCycle() {
+        val s = _uiState.value
+        val next = calculateCycleUseCase.getNextCycle(cycleDay, s.exportCycleEnd)
+        _uiState.update { it.copy(exportCycleLabel = next.label, exportCycleStart = next.startTime, exportCycleEnd = next.endTime) }
+    }
+
+    fun exportSelectedPeriod() {
+        val s = _uiState.value
+        doExport(s.exportCycleStart, s.exportCycleEnd, s.exportCycleLabel)
+    }
+    fun exportAll() { doExport(0L, Long.MAX_VALUE, "全部") }
+
+    private fun doExport(start: Long, end: Long, label: String) {
         if (_uiState.value.isExporting) return
         viewModelScope.launch {
             _uiState.update { it.copy(isExporting = true) }
             try {
-                val s = appSettingRepository.getSettingsOnce()
-                val day = s?.cycleStartDay ?: 9
-                val cycle = calculateCycleUseCase.getCurrentCycle(day)
-                val raw = transactionRepository.getTransactionsByDateRange(cycle.startTime, cycle.endTime).firstOrNull() ?: emptyList()
+                val raw = transactionRepository.getTransactionsByDateRange(start, end).firstOrNull() ?: emptyList()
 
                 if (raw.isEmpty()) {
-                    Toast.makeText(appContext, "当前周期没有账单数据", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(appContext, "没有账单数据", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
 
-                val csv = buildCsv(raw, cycle.label)
-
+                val cats = categoryRepository.getAllCategories().first()
+                val enriched = raw.map { tx ->
+                    val cat = cats.find { it.id == tx.categoryId }
+                    tx.copy(categoryName = cat?.name ?: "未知", categoryIcon = cat?.icon ?: "📦")
+                }
+                val csv = buildCsv(enriched, label)
                 val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(ClipData.newPlainText("账单导出", csv))
-                Toast.makeText(appContext, "已复制到剪贴板，可粘贴到任意应用", Toast.LENGTH_LONG).show()
+                Toast.makeText(appContext, "已复制到剪贴板", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
                 Toast.makeText(appContext, "导出失败: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
                 _uiState.update { it.copy(isExporting = false) }
+            }
+        }
+    }
+
+    fun importFromClipboard() {
+        viewModelScope.launch {
+            try {
+                val clipboard = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val text = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
+                if (text.isNullOrBlank()) {
+                    Toast.makeText(appContext, "剪贴板为空，请先复制CSV内容", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val lines = text.lines().filter { it.isNotBlank() }
+                // Skip header lines until we find the data header
+                val headerIdx = lines.indexOfFirst { it.startsWith("类型,分类") }
+                if (headerIdx == -1) {
+                    Toast.makeText(appContext, "未识别到账单数据格式", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+                val cats = categoryRepository.getAllCategories().first()
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                var count = 0
+                for (i in (headerIdx + 1) until lines.size) {
+                    val parts = lines[i].split(",")
+                    if (parts.size < 3) continue
+                    val type = if (parts[0].contains("收入")) TransactionType.INCOME else TransactionType.EXPENSE
+                    val catName = parts[1].trim()
+                    val amount = parts[2].trim().toDoubleOrNull() ?: continue
+                    val remark = parts.getOrElse(3) { "" }.trim().removeSurrounding("\"")
+                    // Parse original date from CSV
+                    var createTime = System.currentTimeMillis()
+                    if (parts.size >= 5) {
+                        try { sdf.parse(parts[4].trim())?.time?.let { createTime = it } } catch (_: Exception) {}
+                    }
+                    val cat = cats.find { it.name == catName }
+                    if (cat == null) continue // skip if category name doesn't match exactly
+                    if (amount > 0) {
+                        transactionRepository.insertTransaction(
+                            Transaction(amount = amount, type = type, categoryId = cat.id,
+                                remark = remark, createTime = createTime)
+                        )
+                        count++
+                    }
+                }
+                Toast.makeText(appContext, "导入完成，共 $count 条", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(appContext, "导入失败: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
