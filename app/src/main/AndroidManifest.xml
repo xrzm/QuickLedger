@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 小组件点击后在桌面上直接浮出记账卡片，不启动 Activity -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <application
         android:name=".QuickLedgerApp"
         android:allowBackup="true"
@@ -21,17 +24,16 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".widget.QuickRecordActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:theme="@style/Theme.QuickLedger.Transparent" />
+        <receiver
+            android:name=".widget.QuickRecordOverlayReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".widget.QuickRecordWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

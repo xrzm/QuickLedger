@@ -13,8 +13,8 @@ android {
         applicationId = "com.quickledger.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 13
-        versionName = "2.3.0"
+        versionCode = 15
+        versionName = "2.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

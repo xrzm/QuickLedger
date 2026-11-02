@@ -62,7 +62,7 @@ APK 输出路径：`app/build/outputs/apk/debug/app-debug.apk`
 
 ## 版本
 
-v2.3.0
+v2.3.2
 
 ## 所有者
 
